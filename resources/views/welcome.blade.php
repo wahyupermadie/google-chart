@@ -15,14 +15,18 @@
         <script type="text/javascript">
         google.charts.load('current', {'packages':['corechart']});
         google.charts.setOnLoadCallback(drawChart);
-        function drawChart() {
+        function drawChart(date) {
             $.ajax({
-                type:'GET',
-                url:"{{url('item')}}",
+                headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                type:'post',
+                data: { 'tanggal': date },
+                url:"{{url('getItemByDate')}}",
                 success: function(data){
                     var data = google.visualization.arrayToDataTable(data);
                     var options = {
-                        title: 'Site Visitor Line Chart',
+                        title: 'Item Chart',
                         curveType: 'function',
                         legend: { position: 'bottom' }
                     };
@@ -77,6 +81,12 @@
                                    
                                 </tbody>
                             </table>
+                            <form action="">
+                                <label for="tanggal"> Masukan Tanggal Penjualan </label>
+                                <div class="form-group">
+                                    <input id="tanggal" type="date">
+                                </div>
+                            </form>
                             <div class="col-md-12">
                                 <div id="linechart"></div>                                
                             </div>
@@ -158,6 +168,7 @@
                 });
             })
         }
+        
         function fetchData()
         {
             $.ajax({
@@ -190,6 +201,10 @@
             fetchData()
             editData()
             deleteData()
+            $('#tanggal').on('change', function (e){
+                let date = $(this).val();
+                drawChart(date)
+            });
         })
         
     </script>

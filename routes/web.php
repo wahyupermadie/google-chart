@@ -16,4 +16,5 @@ Route::get('/', function () {
 });
 
 Route::resource('/item','ItemController');
+route::post('getItemByDate','ItemController@getItemByDate');
 Route::get('getitem','ItemController@getItem');

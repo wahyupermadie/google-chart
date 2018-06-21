@@ -17,9 +17,13 @@ class ItemController extends Controller
     {
         return Item::all();
     }
-    public function index()
+
+    public function getItemByDate(Request $request)
     {
-        $items = DB::table('items')->select('name', DB::raw('SUM(qty) as total_jumlah'))->groupBy('name')->get();
+        
+        $items = DB::table('items')->select('name', DB::raw('SUM(qty) as total_jumlah'))
+                ->groupBy('name')
+                ->where('created_at','LIKE','%'.$request->tanggal.'%')->get();
         $result[] = ['Barang','Qty'];
         foreach($items as $key => $value){
             $result[++$key] = [$value->name, (int)$value->total_jumlah];
