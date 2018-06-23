@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Item;
+use App\Jne;
 use Excel;
 use DB;
 class ItemController extends Controller
@@ -15,18 +15,17 @@ class ItemController extends Controller
      */
     public function getItem()
     {
-        return Item::all();
+        return Jne::all();
     }
 
     public function getItemByDate(Request $request)
     {
         
-        $items = DB::table('items')->select('name', DB::raw('SUM(qty) as total_jumlah'))
-                ->groupBy('name')
-                ->where('created_at','LIKE','%'.$request->tanggal.'%')->get();
-        $result[] = ['Barang','Qty'];
-        foreach($items as $key => $value){
-            $result[++$key] = [$value->name, (int)$value->total_jumlah];
+        $jne = DB::table('jne')->selectRaw('*, count(*) as total_jumlah')->groupBy('service')
+        ->where('tanggal','LIKE','%'.$request->tanggal.'%')->get();
+        $result[] = ['Service','Jumlah'];
+        foreach($jne as $key => $value){
+            $result[++$key] = [$value->service, (int)$value->total_jumlah];
         }
 
         return $result;
@@ -55,10 +54,14 @@ class ItemController extends Controller
             $data = \Excel::load($path)->get();
             if($data->count()){
                 foreach ($data as $key => $value) {
-                    $arr[] = ['name' => $value->barang, 'qty' => $value->qty];
+                    $arr[] = ['tanggal' => $value->tanggal, 'no_resi' => $value->no_resi,
+                              'yes' => $value->yes, 'reg' => $value->reg,
+                              'oke' => $value->oke, 'service' => $value->service,
+                              'tujuan' => $value->tujuan, 'pengirim' => $value->pengirim,
+                              'penerima' => $value->penerima];
                 }
                 if(!empty($arr)){
-                    Item::insert($arr);
+                    Jne::insert($arr);
                     return back()->with('success','Insert Record successfully.');
                 }
             }
@@ -97,11 +100,11 @@ class ItemController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $item = Item::find($id);
+        $item = Jne::find($id);
         // return $item;
         // return $request->name;
-        $item->name = $request->name;
-        $item->qty = $request->qty;
+        $item->tanggal = $request->tanggal;
+        $item->service = $request->service;
         $item->save();
         return back()->with('success','Update Record successfully.');
     }
@@ -114,7 +117,7 @@ class ItemController extends Controller
      */
     public function destroy($id)
     {
-        $item = Item::find($id);
+        $item = Jne::find($id);
         $item->delete();
         return back()->with('success','Delete Record successfully.');
     }

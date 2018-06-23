@@ -14,8 +14,9 @@
         <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
         <script type="text/javascript">
         google.charts.load('current', {'packages':['corechart']});
-        google.charts.setOnLoadCallback(drawChart);
-        function drawChart(date) {
+        google.charts.setOnLoadCallback(drawChartLine);
+        google.charts.setOnLoadCallback(drawChartPie);
+        function drawChartLine(date) {
             $.ajax({
                 headers: {
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -24,6 +25,7 @@
                 data: { 'tanggal': date },
                 url:"{{url('getItemByDate')}}",
                 success: function(data){
+                    console.log(data)
                     var data = google.visualization.arrayToDataTable(data);
                     var options = {
                         title: 'Item Chart',
@@ -31,6 +33,27 @@
                         legend: { position: 'bottom' }
                     };
                     var chart = new google.visualization.LineChart(document.getElementById('linechart'));
+                    chart.draw(data, options);
+                }
+            })
+        }
+        function drawChartPie(date) {
+            $.ajax({
+                headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                type:'post',
+                data: { 'tanggal': date },
+                url:"{{url('getItemByDate')}}",
+                success: function(data){
+                    console.log(data)
+                    var data = google.visualization.arrayToDataTable(data);
+                    var options = {
+                        title: 'Item Chart',
+                        curveType: 'function',
+                        legend: { position: 'bottom' }
+                    };
+                    var chart = new google.visualization.PieChart(document.getElementById('pieChart'));
                     chart.draw(data, options);
                 }
             })
@@ -71,9 +94,12 @@
                                 <thead>
                                     <tr>
                                         <th>No</th>
-                                        <th>Nama Barang</th>
-                                        <th>Jumlah</th>
-                                        <th>Tanggal Terima</th>
+                                        <th>Tanggal</th>
+                                        <th>No Resi</th>
+                                        <th>Service</th>
+                                        <th>Tujuan</th>
+                                        <th>Pengirim</th>
+                                        <th>Penerima</th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
@@ -88,7 +114,8 @@
                                 </div>
                             </form>
                             <div class="col-md-12">
-                                <div id="linechart"></div>                                
+                                <div id="linechart"></div>     
+                                <div id="pieChart"></div>                                 
                             </div>
                     </div>
                 </div>
@@ -104,10 +131,10 @@
                                 </div>
                                 <div class="modal-body">
                                         <div class="form-group">
-                                            <input type="text" name="name" id="nama_item_edit" class="form-control" placeholder="Masukan nama item">
+                                            <input type="date" name="tanggal" id="tanggal_edit" class="form-control" placeholder="Masukan Tanggal Service">
                                         </div>
                                         <div class="form-group">
-                                            <input type="text" name="qty" id="jumlah_item_edit" class="form-control" placeholder="Masukan jumlah item">
+                                            <input type="text" name="service" id="service_edit" class="form-control" placeholder="Masukan Jenis Service">
                                         </div>
                                 </div>
                                 <div class="modal-footer">
@@ -130,12 +157,30 @@
             $(".btnEdit").on('click', function(e){
                 e.preventDefault();
                 let idx = $(this).attr("id")
-                var nama_item = $('#tableItem tr').eq(id).find('td').eq(1).html();
-                var jumlah_item = $('#tableItem tr').eq(id).find('td').eq(2).html();
-                console.log(idx, nama_item, jumlah_item)
+                var tanggal = $('#tableItem tr').eq(id).find('td').eq(1).html();
+                var service = $('#tableItem tr').eq(id).find('td').eq(3).html();
+                // console.log(idx, tanggal, service)
+                var date = new Date(tanggal);
+                var get_date = ''
+                var get_month = ''
+                var dates = date.getDate().toString();
+                if(dates.length > 1){
+                    get_date = date.getDate();
+                }else{
+                    get_date = '0'+date.getDate();
+                }
+
+                var months = (date.getMonth()+1).toString();
+                console.log(months)
+                if(months.length > 1){
+                    get_month = date.getMonth()+1;
+                }else{
+                    get_month = '0'+(date.getMonth()+1);
+                }
+                var new_date = date.getFullYear()+'-'+get_month+'-'+get_date
                 $('#form-edit-item').attr('action','{{url('item')}}'+'/'+idx)
-                $('#nama_item_edit').val(nama_item);
-                $('#jumlah_item_edit').val(jumlah_item);
+                $('#tanggal_edit').val(new_date);
+                $('#service_edit').val(service);
                 $("#edit-modal").modal('show')
             })
         }
@@ -162,7 +207,8 @@
                         data: {_method: 'delete'},
                         success: function (data) {
                             fetchData()
-                            drawChart()    
+                            drawChartLine() 
+                            drawChartPie()   
                         }         
                     });
                 });
@@ -182,9 +228,12 @@
                         html+=
                         '<tr>'+
                             '<td>'+ ($i+1) +'</td>'+
-                            '<td>'+ data[$i]['name'] +'</td>'+
-                            '<td>'+ data[$i]['qty'] +'</td>'+
-                            '<td>'+ data[$i]['created_at'] +'</td>'+
+                            '<td>'+ data[$i]['tanggal'] +'</td>'+
+                            '<td>'+ data[$i]['no_resi'] +'</td>'+
+                            '<td>'+ data[$i]['service'] +'</td>'+
+                            '<td>'+ data[$i]['tujuan'] +'</td>'+
+                            '<td>'+ data[$i]['pengirim'] +'</td>'+
+                            '<td>'+ data[$i]['penerima'] +'</td>'+
                             '<td>'
                                 +'<button  onclick=editData("'+ ($i+1) +'") id="'+ data[$i]['id'] +'" class="btnEdit btn btn-primary" style="margin-right: 5px!important">'+'EDIT'+'</button>'
                                 +'<button  onclick=deleteData("'+ data[$i]['id'] +'")  class="btnDelete btn btn-warning">'+'DELETE'+'</button>'  
@@ -203,7 +252,8 @@
             deleteData()
             $('#tanggal').on('change', function (e){
                 let date = $(this).val();
-                drawChart(date)
+                drawChartLine(date) 
+                drawChartPie(date)
             });
         })
         
